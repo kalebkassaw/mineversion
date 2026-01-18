@@ -1,0 +1,6 @@
+minecraft_version: ""
+
+mods:
+  - id: ""
+    version: "1.0.0"
+    required: true
