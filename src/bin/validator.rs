@@ -5,7 +5,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     
     if args.len() != 2 {
-        eprintln!("Usage: {} <requirements.yaml>", args[0]);
+        eprintln!("Usage: {} <path/to/requirements.yaml>", args[0]);
         std::process::exit(1);
     }
 
@@ -33,8 +33,8 @@ fn main() {
     match validate_requirements(&requirements) {
         Ok(()) => {
             println!("✓ Validation successful!");
-            println!("\nMinecraft Version: {}", requirements.minecraft_version);
-            println!("Total Mods: {}", requirements.mods.len());
+            println!("\nMinecraft version: {}", requirements.minecraft_version);
+            println!("Total mods: {}", requirements.mods.len());
             println!("\nMods:");
             for mod_entry in &requirements.mods {
                 let required_str = if mod_entry.required { "required" } else { "optional" };
