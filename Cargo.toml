@@ -12,5 +12,5 @@ name = "validator"
 path = "src/bin/validator.rs"
 
 [lib]
-name = "mod_requirements_validator"
+name = "mineversion"
 path = "src/lib.rs"

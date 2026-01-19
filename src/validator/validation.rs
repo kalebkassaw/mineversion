@@ -25,7 +25,7 @@ fn validate_minecraft_version(version: &str) -> bool {
 ///
 /// # Examples
 /// ```
-/// use minecraft_tools::validator::{ModRequirements, validate_requirements};
+/// use mineversion::validator::{ModRequirements, validate_requirements};
 ///
 /// let yaml = r#"
 /// minecraft_version: "1.20.1"
