@@ -1,4 +1,4 @@
-use mod_requirements_validator::{ModRequirements, validate_requirements};
+use mineversion::validator::{ModRequirements, validate_requirements};
 use std::fs;
 
 fn main() {
@@ -35,7 +35,12 @@ fn main() {
             println!("✓ Validation successful!");
             println!("\nMinecraft version: {}", requirements.minecraft_version);
             println!("Total mods: {}", requirements.mods.len());
+            println!("Required: {} | Optional: {}", 
+                requirements.required_count(), 
+                requirements.optional_count()
+            );
             println!("\nMods:");
+
             for mod_entry in &requirements.mods {
                 let required_str = if mod_entry.required { "required" } else { "optional" };
                 let url_str = mod_entry.url.as_ref()
