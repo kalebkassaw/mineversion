@@ -13,8 +13,10 @@ pub enum ValidationError {
     EmptyModList,
     /// A mod has an invalid URL at the given index
     InvalidUrl(usize, String),
-    /// Duplicate mod IDs found
-    DuplicateModId(String),
+    /// Duplicate mod name found
+    DuplicateName(String),
+    /// Duplicate mod filename found
+    DuplicateFilename(String),
 }
 
 impl fmt::Display for ValidationError {
@@ -35,8 +37,11 @@ impl fmt::Display for ValidationError {
             ValidationError::InvalidUrl(idx, url) => {
                 write!(f, "Mod at index {} has invalid URL: {}", idx, url)
             }
-            ValidationError::DuplicateModId(id) => {
-                write!(f, "Duplicate mod id found: {}", id)
+            ValidationError::DuplicateName(name) => {
+                write!(f, "Duplicate mod name found: {}", name)
+            }
+            ValidationError::DuplicateFilename(filename) => {
+                write!(f, "Duplicate mod filename found: {}", filename)
             }
         }
     }

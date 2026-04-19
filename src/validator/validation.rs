@@ -30,7 +30,8 @@ fn validate_minecraft_version(version: &str) -> bool {
 /// let yaml = r#"
 /// minecraft_version: "1.20.1"
 /// mods:
-///   - id: forge
+///   - name: forge
+///     filename: forge.jar
 ///     version: "47.1.0"
 ///     required: true
 /// "#;
@@ -51,18 +52,25 @@ pub fn validate_requirements(reqs: &ModRequirements) -> Result<(), Vec<Validatio
         errors.push(ValidationError::EmptyModList);
     }
 
-    // Track mod IDs to detect duplicates
-    let mut seen_ids = HashSet::new();
+    // Track mod names/filenames to detect duplicates
+    let mut seen_names = HashSet::new();
+    let mut seen_filenames = HashSet::new();
 
     // Validate each mod
     for (idx, mod_entry) in reqs.mods.iter().enumerate() {
-        // Check for empty ID
-        if mod_entry.id.trim().is_empty() {
+        // Check for empty name
+        if mod_entry.name.trim().is_empty() {
             errors.push(ValidationError::EmptyId(idx));
         } else {
-            // Check for duplicate IDs
-            if !seen_ids.insert(mod_entry.id.clone()) {
-                errors.push(ValidationError::DuplicateModId(mod_entry.id.clone()));
+            // Check for duplicate names
+            if !seen_names.insert(mod_entry.name.clone()) {
+                errors.push(ValidationError::DuplicateName(mod_entry.name.clone()));
+            }
+            // Check for duplicate filenames
+            if !seen_filenames.insert(mod_entry.filename.clone()) {
+                errors.push(ValidationError::DuplicateFilename(
+                    mod_entry.filename.clone(),
+                ));
             }
         }
 
@@ -96,10 +104,12 @@ mod tests {
         let yaml = r#"
 minecraft_version: "1.20.1"
 mods:
-  - id: forge
+  - name: forge
+    filename: forge.jar
     version: "47.1.0"
     required: true
-  - id: jei
+  - name: jei
+    filename: jei.jar
     version: "15.2.0.27"
     url: https://www.curseforge.com/test
     required: true
@@ -109,11 +119,12 @@ mods:
     }
 
     #[test]
-    fn test_empty_mod_id() {
+    fn test_empty_mod_name() {
         let yaml = r#"
 minecraft_version: "1.20.1"
 mods:
-  - id: ""
+  - name: ""
+    filename: ""
     version: "1.0.0"
     required: true
 "#;
@@ -121,7 +132,9 @@ mods:
         let result = validate_requirements(&reqs);
         assert!(result.is_err());
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, ValidationError::EmptyId(0))));
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::EmptyId(0))));
     }
 
     #[test]
@@ -129,7 +142,8 @@ mods:
         let yaml = r#"
 minecraft_version: "1.20.1"
 mods:
-  - id: test
+  - name: test
+    filename: test.jar
     version: "1.0.0"
     url: "not-a-url"
     required: true
@@ -138,19 +152,31 @@ mods:
         let result = validate_requirements(&reqs);
         assert!(result.is_err());
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, ValidationError::InvalidUrl(_, _))));
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::InvalidUrl(_, _))));
     }
 
     #[test]
-    fn test_duplicate_mod_ids() {
+    fn test_duplicate_mod_names() {
         let mut reqs = ModRequirements::new("1.20.1".to_string());
-        reqs.add_mod(Mod::required("forge".to_string(), "1.0.0".to_string()));
-        reqs.add_mod(Mod::required("forge".to_string(), "2.0.0".to_string()));
+        reqs.add_mod(Mod::required(
+            "forge".to_string(),
+            "forge.jar".to_string(),
+            "1.0.0".to_string(),
+        ));
+        reqs.add_mod(Mod::required(
+            "forge".to_string(),
+            "forge2.jar".to_string(),
+            "2.0.0".to_string(),
+        ));
 
         let result = validate_requirements(&reqs);
         assert!(result.is_err());
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, ValidationError::DuplicateModId(_))));
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::DuplicateName(_))));
     }
 
     #[test]
@@ -159,37 +185,65 @@ mods:
         let result = validate_requirements(&reqs);
         assert!(result.is_err());
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, ValidationError::EmptyModList)));
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::EmptyModList)));
     }
 
     #[test]
     fn test_invalid_minecraft_version() {
         let mut reqs = ModRequirements::new("".to_string());
-        reqs.add_mod(Mod::required("forge".to_string(), "1.0.0".to_string()));
+        reqs.add_mod(Mod::required(
+            "forge".to_string(),
+            "forge.jar".to_string(),
+            "1.0.0".to_string(),
+        ));
 
         let result = validate_requirements(&reqs);
         assert!(result.is_err());
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, ValidationError::InvalidMinecraftVersion)));
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::InvalidMinecraftVersion)));
     }
 
     #[test]
     fn test_mod_builder_pattern() {
-        let mod_entry = Mod::required("jei".to_string(), "1.0.0".to_string())
-            .with_url("https://example.com/jei.jar".to_string());
+        let mod_entry = Mod::required(
+            "jei".to_string(),
+            "jei.jar".to_string(),
+            "1.0.0".to_string(),
+        )
+        .with_url("https://example.com/jei.jar".to_string());
 
-        assert_eq!(mod_entry.id, "jei");
+        assert_eq!(mod_entry.name, "jei");
+        assert_eq!(mod_entry.filename, "jei.jar");
         assert_eq!(mod_entry.version, "1.0.0");
         assert!(mod_entry.required);
-        assert_eq!(mod_entry.url, Some("https://example.com/jei.jar".to_string()));
+        assert_eq!(
+            mod_entry.url,
+            Some("https://example.com/jei.jar".to_string())
+        );
     }
 
     #[test]
     fn test_requirements_counts() {
         let mut reqs = ModRequirements::new("1.20.1".to_string());
-        reqs.add_mod(Mod::required("forge".to_string(), "1.0.0".to_string()));
-        reqs.add_mod(Mod::required("jei".to_string(), "2.0.0".to_string()));
-        reqs.add_mod(Mod::optional("optifine".to_string(), "3.0.0".to_string()));
+        reqs.add_mod(Mod::required(
+            "forge".to_string(),
+            "forge.jar".to_string(),
+            "1.0.0".to_string(),
+        ));
+        reqs.add_mod(Mod::required(
+            "jei".to_string(),
+            "jei.jar".to_string(),
+            "2.0.0".to_string(),
+        ));
+        reqs.add_mod(Mod::optional(
+            "optifine".to_string(),
+            "optifine.jar".to_string(),
+            "3.0.0".to_string(),
+        ));
 
         assert_eq!(reqs.required_count(), 2);
         assert_eq!(reqs.optional_count(), 1);

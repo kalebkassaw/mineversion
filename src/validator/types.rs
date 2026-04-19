@@ -12,8 +12,10 @@ pub struct ModRequirements {
 /// Represents a single mod with its requirements
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
-    /// Unique identifier for the mod
-    pub id: String,
+    /// Mod name (human-readable)
+    pub name: String,
+    /// Mod filename (.jar)
+    pub filename: String,
     /// Specific version of the mod
     pub version: String,
     /// Whether this mod is required (true) or optional (false)
@@ -51,9 +53,10 @@ impl ModRequirements {
 
 impl Mod {
     /// Creates a new required mod
-    pub fn required(id: String, version: String) -> Self {
+    pub fn required(name: String, filename: String, version: String) -> Self {
         Self {
-            id,
+            name,
+            filename,
             version,
             required: true,
             url: None,
@@ -61,9 +64,10 @@ impl Mod {
     }
 
     /// Creates a new optional mod
-    pub fn optional(id: String, version: String) -> Self {
+    pub fn optional(name: String, filename: String, version: String) -> Self {
         Self {
-            id,
+            name,
+            filename,
             version,
             required: false,
             url: None,

@@ -46,11 +46,12 @@ fn main() {
                 let url_str = mod_entry.url.as_ref()
                     .map(|u| format!(" ({})", u))
                     .unwrap_or_default();
-                println!("  - {} v{} [{}]{}", 
-                    mod_entry.id, 
+                println!("  - {} v{} [{}]{} @ {}", 
+                    mod_entry.name,
                     mod_entry.version, 
                     required_str,
-                    url_str
+                    url_str,
+                    mod_entry.filename,
                 );
             }
         }
