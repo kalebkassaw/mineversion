@@ -60,18 +60,24 @@ pub fn validate_requirements(reqs: &ModRequirements) -> Result<(), Vec<Validatio
     for (idx, mod_entry) in reqs.mods.iter().enumerate() {
         // Check for empty name
         if mod_entry.name.trim().is_empty() {
-            errors.push(ValidationError::EmptyId(idx));
-        } else {
-            // Check for duplicate names
-            if !seen_names.insert(mod_entry.name.clone()) {
-                errors.push(ValidationError::DuplicateName(mod_entry.name.clone()));
-            }
-            // Check for duplicate filenames
-            if !seen_filenames.insert(mod_entry.filename.clone()) {
-                errors.push(ValidationError::DuplicateFilename(
-                    mod_entry.filename.clone(),
-                ));
-            }
+            errors.push(ValidationError::EmptyName(idx));
+        }
+
+        // Check for empty filename
+        if mod_entry.filename.trim().is_empty() {
+            errors.push(ValidationError::EmptyFilename(idx));
+        }
+
+        // Check for duplicate names
+        if !seen_names.insert(mod_entry.name.clone()) {
+            errors.push(ValidationError::DuplicateName(mod_entry.name.clone()));
+        }
+
+        // Check for duplicate filenames
+        if !seen_filenames.insert(mod_entry.filename.clone()) {
+            errors.push(ValidationError::DuplicateFilename(
+                mod_entry.filename.clone(),
+            ));
         }
 
         // Check for empty version
@@ -134,7 +140,26 @@ mods:
         let errors = result.unwrap_err();
         assert!(errors
             .iter()
-            .any(|e| matches!(e, ValidationError::EmptyId(0))));
+            .any(|e| matches!(e, ValidationError::EmptyName(0))));
+    }
+
+    #[test]
+    fn test_empty_mod_filename() {
+        let yaml = r#"
+minecraft_version: "1.20.1"
+mods:
+  - name: ""
+    filename: ""
+    version: "1.0.0"
+    required: true
+"#;
+        let reqs: ModRequirements = serde_yaml::from_str(yaml).unwrap();
+        let result = validate_requirements(&reqs);
+        assert!(result.is_err());
+        let errors = result.unwrap_err();
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::EmptyFilename(0))));
     }
 
     #[test]
@@ -177,6 +202,28 @@ mods:
         assert!(errors
             .iter()
             .any(|e| matches!(e, ValidationError::DuplicateName(_))));
+    }
+
+    #[test]
+    fn test_duplicate_mod_filenames() {
+        let mut reqs = ModRequirements::new("1.20.1".to_string());
+        reqs.add_mod(Mod::required(
+            "forge".to_string(),
+            "forge.jar".to_string(),
+            "1.0.0".to_string(),
+        ));
+        reqs.add_mod(Mod::required(
+            "forge2".to_string(),
+            "forge.jar".to_string(),
+            "2.0.0".to_string(),
+        ));
+
+        let result = validate_requirements(&reqs);
+        assert!(result.is_err());
+        let errors = result.unwrap_err();
+        assert!(errors
+            .iter()
+            .any(|e| matches!(e, ValidationError::DuplicateFilename(_))));
     }
 
     #[test]
