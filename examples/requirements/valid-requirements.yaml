@@ -1,0 +1,19 @@
+minecraft_version: "1.20.1"
+
+mods:
+  - name: forge
+    filename: forge.jar
+    version: "47.1.0"
+    required: true
+    
+  - name: jei
+    filename: jei.jar
+    version: "15.2.0.27"
+    url: https://www.curseforge.com/minecraft/mc-mods/jei
+    required: true
+    
+  - name: optifine
+    filename: optifine.jar
+    version: "1.20.1_HD_U_I6"
+    url: https://optifine.net/downloads
+    required: false
